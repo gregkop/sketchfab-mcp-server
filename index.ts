@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -5,6 +7,7 @@ import axios, { AxiosError } from "axios";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import AdmZip from "adm-zip";
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -199,6 +202,37 @@ class SketchfabApiClient {
       }
       throw error instanceof Error ? error : new Error(String(error));
     }
+  }
+}
+
+// Utility function to check if a buffer is a ZIP file
+function isZipFile(buffer: Buffer): boolean {
+  // Check for ZIP file signature (PK..)
+  return buffer.length >= 4 && 
+         buffer[0] === 0x50 && 
+         buffer[1] === 0x4B && 
+         (buffer[2] === 0x03 || buffer[2] === 0x05 || buffer[2] === 0x07) && 
+         (buffer[3] === 0x04 || buffer[3] === 0x06 || buffer[3] === 0x08);
+}
+
+// Utility function to extract a ZIP file
+function extractZipFile(zipBuffer: Buffer, outputDir: string): string[] {
+  try {
+    const zip = new AdmZip(zipBuffer);
+    const zipEntries = zip.getEntries();
+    
+    // Create output directory if it doesn't exist
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+    
+    // Extract all files
+    zip.extractAllTo(outputDir, true);
+    
+    // Return list of extracted files
+    return zipEntries.map(entry => path.join(outputDir, entry.entryName));
+  } catch (error) {
+    throw new Error(`Failed to extract ZIP file: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -456,18 +490,40 @@ server.tool(
         // Determine filename and path
         const filename = `${model.name.replace(/[^a-zA-Z0-9]/g, "_")}_${modelId}.${fallbackFormat}`;
         const savePath = outputPath || path.join(os.tmpdir(), filename);
+        const saveDir = path.dirname(savePath);
         
-        // Write the file
-        fs.writeFileSync(savePath, modelData);
-        
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Downloaded model "${model.name}" in ${fallbackFormat} format (requested ${format} was not available).\nSaved to: ${savePath}`,
-            },
-          ],
-        };
+        // Check if the downloaded file is a ZIP archive
+        if (isZipFile(modelData)) {
+          // Create a directory for extraction
+          const extractDir = path.join(saveDir, `${path.basename(savePath, path.extname(savePath))}_extracted`);
+          
+          // Extract the ZIP file
+          const extractedFiles = extractZipFile(modelData, extractDir);
+          
+          // Save the original ZIP file as well
+          fs.writeFileSync(savePath, modelData);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Downloaded model "${model.name}" in ${fallbackFormat} format (requested ${format} was not available).\nThe file was a ZIP archive and has been automatically extracted.\nOriginal ZIP saved to: ${savePath}\nExtracted files in: ${extractDir}\nExtracted ${extractedFiles.length} files.`,
+              },
+            ],
+          };
+        } else {
+          // Write the file as is
+          fs.writeFileSync(savePath, modelData);
+          
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Downloaded model "${model.name}" in ${fallbackFormat} format (requested ${format} was not available).\nSaved to: ${savePath}`,
+              },
+            ],
+          };
+        }
       }
       
       // Download the model in the requested format
@@ -477,18 +533,40 @@ server.tool(
       // Determine filename and path
       const filename = `${model.name.replace(/[^a-zA-Z0-9]/g, "_")}_${modelId}.${format}`;
       const savePath = outputPath || path.join(os.tmpdir(), filename);
+      const saveDir = path.dirname(savePath);
       
-      // Write the file
-      fs.writeFileSync(savePath, modelData);
-      
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Downloaded model "${model.name}" in ${format} format.\nSaved to: ${savePath}`,
-          },
-        ],
-      };
+      // Check if the downloaded file is a ZIP archive
+      if (isZipFile(modelData)) {
+        // Create a directory for extraction
+        const extractDir = path.join(saveDir, `${path.basename(savePath, path.extname(savePath))}_extracted`);
+        
+        // Extract the ZIP file
+        const extractedFiles = extractZipFile(modelData, extractDir);
+        
+        // Save the original ZIP file as well
+        fs.writeFileSync(savePath, modelData);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Downloaded model "${model.name}" in ${format} format.\nThe file was a ZIP archive and has been automatically extracted.\nOriginal ZIP saved to: ${savePath}\nExtracted files in: ${extractDir}\nExtracted ${extractedFiles.length} files.`,
+            },
+          ],
+        };
+      } else {
+        // Write the file as is
+        fs.writeFileSync(savePath, modelData);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Downloaded model "${model.name}" in ${format} format.\nSaved to: ${savePath}`,
+            },
+          ],
+        };
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       
