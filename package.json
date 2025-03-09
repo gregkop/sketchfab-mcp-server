@@ -1,28 +1,52 @@
 {
-  "name": "send-email",
+  "name": "sketchfab-mcp",
   "version": "1.0.0",
-  "main": "index.js",
-  "keywords": [],
+  "description": "A Model Context Protocol (MCP) server for interacting with Sketchfab",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "sketchfab-mcp": "dist/index.js",
+    "sketchfab-mcp-server": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "lint": "eslint . --ext .ts",
+    "test": "vitest",
+    "prepublishOnly": "npm run build",
+    "link": "npm link",
+    "unlink": "npm unlink"
+  },
+  "keywords": ["mcp", "sketchfab", "3d", "models", "3d-models", "3d-assets", "model-context-protocol"],
   "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gregkop/sketchfab-mcp-server.git"
+  },
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.5.0",
-    "@react-email/components": "^0.0.33",
-    "@react-email/render": "^1.0.5",
-    "minimist": "^1.2.8",
-    "resend": "^4.1.2",
+    "axios": "^1.6.7",
+    "yargs": "^17.7.2",
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/minimist": "^1.2.5",
     "@types/node": "^22.13.5",
-    "@types/react": "^18.2.64",
-    "@types/react-dom": "^18.2.21",
-    "typescript": "^5.7.3"
-  },
-  "type": "module",
-  "scripts": {
-    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\""
+    "@types/yargs": "^17.0.33",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "eslint": "^8.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0"
   }
 }

@@ -1,51 +1,87 @@
-# MCP Server Template 🛠️
+# Sketchfab MCP Server
 
-A starter template for building your own Model Context Protocol (MCP) server. This template provides the basic structure and setup needed to create custom MCPs that can be used with Cursor or Claude Desktop.
+A Model Context Protocol (MCP) server for interacting with Sketchfab's 3D model platform. This MCP allows you to search, view details, and download 3D models from Sketchfab directly through Claude or Cursor.
 
 ## Features
 
-- Basic MCP server setup with TypeScript
-- Sample tool implementation
-- Ready-to-use project structure
-- Built with [@modelcontextprotocol/sdk](https://docs.anthropic.com/en/docs/agents-and-tools/mcp)
+- **Search for 3D Models**: Find models on Sketchfab using keywords, tags, and categories
+- **View Model Details**: Get comprehensive information about specific models
+- **Download Models**: Download models in various formats (gltf, glb, usdz, source)
 
-## Project Structure
+## Prerequisites
 
-```
-mcp-server-template/
-├── index.ts        # Main server implementation
-├── package.json    # Project dependencies
-├── tsconfig.json   # TypeScript configuration
-└── build/         # Compiled JavaScript output
-```
+- Node.js 18 or higher
+- A Sketchfab API key (for authentication)
 
-## Getting Started
+## Installation
 
-1. Clone this template:
-```bash
-git clone [your-repo-url] my-mcp-server
-cd my-mcp-server
-```
-
+1. Clone this repository
 2. Install dependencies:
-```bash
-pnpm install
-```
-
+   ```
+   npm install
+   ```
 3. Build the project:
-```bash
-pnpm run build
+   ```
+   npm run build
+   ```
+
+## Usage
+
+### Running the MCP Server
+
+```
+npm start
 ```
 
-This will generate the `/build/index.js` file - your compiled MCP server script.
+To provide your Sketchfab API key, use the `--api-key` parameter:
+
+```
+node build/index.js --api-key YOUR_API_KEY
+```
+
+Alternatively, you can set the `SKETCHFAB_API_KEY` environment variable:
+
+```
+export SKETCHFAB_API_KEY=YOUR_API_KEY
+npm start
+```
+
+### Available Tools
+
+#### 1. sketchfab-search
+
+Search for 3D models on Sketchfab based on keywords and filters.
+
+Parameters:
+- `query` (optional): Text search query (e.g., "car", "house", "character")
+- `tags` (optional): Filter by specific tags (e.g., ["animated", "rigged", "pbr"])
+- `categories` (optional): Filter by categories (e.g., ["characters", "architecture", "vehicles"])
+- `downloadable` (optional): Set to true to show only downloadable models
+- `limit` (optional): Maximum number of results to return (1-24, default: 10)
+
+#### 2. sketchfab-model-details
+
+Get detailed information about a specific Sketchfab model.
+
+Parameters:
+- `modelId`: The unique ID of the Sketchfab model
+
+#### 3. sketchfab-download
+
+Download a 3D model from Sketchfab.
+
+Parameters:
+- `modelId`: The unique ID of the Sketchfab model to download
+- `format` (optional): Preferred format to download the model in (gltf, glb, usdz, source)
+- `outputPath` (optional): Local directory or file path to save the downloaded file
 
 ## Using with Cursor
 
 1. Go to Cursor Settings -> MCP -> Add new MCP server
 2. Configure your MCP:
-   - Name: [choose your own name]
+   - Name: Sketchfab MCP
    - Type: command
-   - Command: `node ABSOLUTE_PATH_TO_MCP_SERVER/build/index.js`
+   - Command: `node /path/to/build/index.js --api-key YOUR_API_KEY`
 
 ## Using with Claude Desktop
 
@@ -54,58 +90,20 @@ Add the following MCP config to your Claude Desktop configuration:
 ```json
 {
   "mcpServers": {
-    "your-mcp-name": {
+    "sketchfab": {
       "command": "node",
-      "args": ["ABSOLUTE_PATH_TO_MCP_SERVER/build/index.js"]
+      "args": ["/path/to/build/index.js", "--api-key", "YOUR_API_KEY"]
     }
   }
 }
 ```
 
-## Development
+## Environment Variables
 
-The template includes a sample tool implementation in `index.ts`. To create your own MCP:
+You can set the following environment variables:
 
-1. Modify the server configuration in `index.ts`:
-```typescript
-const server = new McpServer({
-  name: "your-mcp-name",
-  version: "0.0.1",
-});
-```
-
-2. Define your custom tools using the `server.tool()` method:
-```typescript
-server.tool(
-  "your-tool-name",
-  "Your tool description",
-  {
-    // Define your tool's parameters using Zod schema
-    parameter: z.string().describe("Parameter description"),
-  },
-  async ({ parameter }) => {
-    // Implement your tool's logic here
-    return {
-      content: [
-        {
-          type: "text",
-          text: "Your tool's response",
-        },
-      ],
-    };
-  }
-);
-```
-
-3. Build and test your implementation:
-```bash
-npm run build
-```
-
-## Contributing
-
-Feel free to submit issues and enhancement requests!
+- `SKETCHFAB_API_KEY`: Your Sketchfab API key (alternative to passing it with the --api-key parameter)
 
 ## License
 
-MIT
+ISC
